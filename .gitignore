@@ -30,4 +30,5 @@ data_cache/
 Thumbs.db
 
 # 日志
+logs/
 *.log
