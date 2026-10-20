@@ -1,3 +1,4 @@
+# Python
 .venv/
 venv/
 __pycache__/
@@ -11,8 +12,11 @@ __pycache__/
 dist/
 build/
 
-# 数据文件（可选是否忽略）
-# data/
+# 数据文件
+data/
+data_cache/
+*.csv
+*.xlsx
 
 # IDE
 .vscode/
