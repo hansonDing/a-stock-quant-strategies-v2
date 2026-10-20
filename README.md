@@ -172,6 +172,61 @@ workspace 根目录另有一套早期开发的技术分析选股脚本（v1.x，
 
 ---
 
+## ⏰ 每日定时任务流水线
+
+项目通过 **OpenClaw cron** 调度，在工作日盘前自动执行扫描与预测。
+
+### 执行机制
+
+不是传统 crontab 直接跑脚本，而是 OpenClaw 的 agent 调度：
+
+```
+到点触发（cron 表达式，Asia/Shanghai 时区）
+  → 创建隔离会话（isolated session）
+  → AI agent 接收任务指令，执行对应 python 脚本
+  → 结果推送到 Kimi 聊天（部分任务同步发邮件）
+```
+
+任务定义文件：`~/.openclaw/cron/jobs.json`；运行日志：`~/.openclaw/cron/runs/<任务ID>.jsonl`
+
+### 任务一览（工作日 周一~五）
+
+| 时间 | 任务 | 脚本 | 结果推送 |
+|------|------|------|----------|
+| 08:17 | 国际期货→A股映射扫描器 | `projects/global_futures_analyzer/futures_a_share_mapper.py` | Kimi + 邮件 |
+| 08:25 | 科技板块晨间扫描器 | `projects/tech_sector_scanner/tech_sector_scanner.py` | Kimi + 邮件 |
+| 08:30 | A股强势扫描器（剔除创业板/科创板） | `projects/a_stock_analyzer/a_stock_scanner.py` | Kimi + 邮件 |
+| 09:07 | 科技股晨间预测推送（LightGBM） | `strategies/multi_factor/tomorrow_picks.py` | Kimi |
+
+邮件接收人：`hansonnan.ding@sc.com`、`leo.sun@sc.com`、`jacky.an@sc.com`
+
+### 手动运行
+
+```bash
+# 国际期货→A股映射扫描
+cd projects/global_futures_analyzer && python3 futures_a_share_mapper.py
+
+# 科技板块扫描
+cd projects/tech_sector_scanner && python3 tech_sector_scanner.py
+
+# A股强势扫描
+cd projects/a_stock_analyzer && python3 a_stock_scanner.py
+
+# LightGBM 明日预测（需虚拟环境）
+source venv/bin/activate && python strategies/multi_factor/tomorrow_picks.py
+```
+
+### 任务管理
+
+```bash
+openclaw cron list            # 查看所有任务及下次运行时间
+openclaw cron list --verbose  # 查看任务完整定义
+```
+
+> 另一个仓库 [a-stock-quant-v3](https://github.com/hansonDing/a-stock-quant-v3) 承担 07:50 的多因子选股推荐和周日的缓存清理，通过 submodule 关联。
+
+---
+
 ## ⚠️ 免责声明
 
 本项目仅供学习研究参考，不构成任何投资建议。量化策略基于历史数据回测，过往业绩不代表未来表现。实盘交易存在交易成本、滑点、涨跌停限制等回测未完全考虑的因素，实际收益可能显著低于回测结果。投资有风险，入市需谨慎。
