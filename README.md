@@ -57,11 +57,7 @@ a-stock-quant-strategies/
 ### 安装依赖
 
 ```bash
-# 量化策略（核心）
 pip install -r requirements.txt
-
-# NL2SQL 演示（可选，依赖较重含 torch）
-pip install -r requirements-rag.txt
 ```
 
 > 建议使用虚拟环境：`python -m venv venv && source venv/bin/activate`
@@ -235,6 +231,13 @@ openclaw cron list --verbose  # 查看任务完整定义
 ## ⚠️ 免责声明
 
 本项目仅供学习研究参考，不构成任何投资建议。量化策略基于历史数据回测，过往业绩不代表未来表现。实盘交易存在交易成本、滑点、涨跌停限制等回测未完全考虑的因素，实际收益可能显著低于回测结果。投资有风险，入市需谨慎。
+
+---
+
+## 📄 License
+
+MIT License
+回测结果。投资有风险，入市需谨慎。
 
 ---
 
