@@ -1,0 +1,9 @@
+[submodule "a-stock-quant-v3"]
+	path = a-stock-quant-v3
+	url = https://github.com/hansonDing/a-stock-quant-v3.git
+[submodule "projects/spring-ai-rag"]
+	path = projects/spring-ai-rag
+	url = https://github.com/hansonDing/spring-ai-rag.git
+[submodule "rag-project"]
+	path = rag-project
+	url = https://github.com/hansonDing/spring-ai-rag.git
