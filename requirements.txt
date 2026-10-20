@@ -9,18 +9,3 @@ matplotlib>=3.5.0
 joblib>=1.2.0
 requests>=2.28.0
 akshare>=1.15.0
-
-# RAG / 向量数据库
-chromadb>=0.4.0
-sentence-transformers>=2.2.0
-
-# SQL 解析和格式化
-sqlparse>=0.4.4
-
-# 工具库
-pydantic>=2.0.0
-python-dotenv>=1.0.0
-
-# 可选：用于 Web API
-# fastapi>=0.100.0
-# uvicorn>=0.23.0

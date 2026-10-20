@@ -16,9 +16,14 @@ a-stock-quant-strategies/
 │   └── multi_factor/
 │       ├── ml_factor_tencent_3year.py     # LightGBM + 3年真实数据（推荐）⭐
 │       ├── ml_factor_tencent_1year.py     # LightGBM + 1年真实数据（快速验证）
-│       ├── tomorrow_picks.py              # 明日选股推荐（基于真实模型）
+│       ├── tomorrow_picks.py              # 明日选股推荐（需已训练模型）
 │       ├── ml_factor_backtest.py          # ⚠️ 模拟数据演示（仅供学习）
 │       └── ml_factor_hybrid.py            # ⚠️ 模拟训练+实时预测（仅供学习）
+├── projects/                      # 盘前扫描器（定时任务用）
+│   ├── a_stock_analyzer/          # A股强势扫描器（剔除创业板/科创板）
+│   ├── global_futures_analyzer/   # 国际期货→A股映射
+│   ├── tech_sector_scanner/       # 科技板块晨间扫描
+│   └── spring-ai-rag/             # submodule → hansonDing/spring-ai-rag
 ├── utils/                         # 公共工具模块
 │   ├── api.py                     # 腾讯实时行情 + 历史K线（统一封装）
 │   ├── factors.py                 # 多因子计算（18个因子统一实现）
@@ -27,12 +32,18 @@ a-stock-quant-strategies/
 │   ├── tencent_history_data.py    # 兼容层 → api.py
 │   └── analyze_today.py           # 今日收盘数据分析
 ├── daily_stock_picks.py           # 每日选股推荐（真实模型）⭐
-├── data/                          # 数据输出目录（gitignore）
+├── demo.py                        # NL2SQL RAG 演示（依赖见 requirements-rag.txt）
+├── a-stock-quant-v3/              # submodule → hansonDing/a-stock-quant-v3
+├── data/                          # 数据输出目录（gitignore，含模型文件）
 ├── reports/                       # 回测报告图表
-├── requirements.txt               # 依赖版本锁定
+├── requirements.txt               # 量化依赖
+├── requirements-rag.txt           # NL2SQL 演示的 RAG 依赖（可选）
 ├── .gitignore
 └── README.md
 ```
+
+> clone 后需拉取子模块：`git submodule update --init`
+> 注意：`data/` 不入 git（含训练好的模型），全新环境首次运行自动重新训练
 
 ---
 
@@ -46,8 +57,14 @@ a-stock-quant-strategies/
 ### 安装依赖
 
 ```bash
+# 量化策略（核心）
 pip install -r requirements.txt
+
+# NL2SQL 演示（可选，依赖较重含 torch）
+pip install -r requirements-rag.txt
 ```
+
+> 建议使用虚拟环境：`python -m venv venv && source venv/bin/activate`
 
 ### 运行策略
 
@@ -154,24 +171,6 @@ python utils/analyze_today.py
 
 ---
 
-## 📎 附：根目录经典技术分析工具
-
-workspace 根目录另有一套早期开发的技术分析选股脚本（v1.x，akshare 数据源），与上面的策略合集互补使用：
-
-| 文件 | 功能 | 说明 |
-|------|------|------|
-| `stock_analyzer.py` | 多因子技术选股 | MACD、RSI、KDJ、布林带等 |
-| `stock_momentum.py` | 动量选股 + 热点板块 | 突破检测 + 资金流向 |
-| `stock_dashboard.py` | 综合分析仪表盘 | 技术面+动量+资金面综合评分 |
-| `stock_backtest_demo.py` | 回测验证（演示版） | 使用模拟数据验证策略有效性 |
-| `install.sh` | 一键安装脚本 | 自动安装依赖 |
-
-**过滤规则**：自动排除科创板(688)、创业板(300)、ST股、退市股。
-
-**综合评分**：总分 = 技术面 × 0.4 + 动量 × 0.4 + 资金面 × 0.2；90分以上强烈推荐，60分以下暂不关注。
-
----
-
 ## ⏰ 每日定时任务流水线
 
 项目通过 **OpenClaw cron** 调度，在工作日盘前自动执行扫描与预测。
@@ -202,19 +201,25 @@ workspace 根目录另有一套早期开发的技术分析选股脚本（v1.x，
 
 ### 手动运行
 
+以下命令均在**仓库根目录**执行：
+
 ```bash
 # 国际期货→A股映射扫描
-cd projects/global_futures_analyzer && python3 futures_a_share_mapper.py
+python3 projects/global_futures_analyzer/futures_a_share_mapper.py
 
 # 科技板块扫描
-cd projects/tech_sector_scanner && python3 tech_sector_scanner.py
+python3 projects/tech_sector_scanner/tech_sector_scanner.py
 
-# A股强势扫描
-cd projects/a_stock_analyzer && python3 a_stock_scanner.py
+# A股强势扫描（剔除创业板/科创板）
+python3 projects/a_stock_analyzer/a_stock_scanner.py
 
-# LightGBM 明日预测（需虚拟环境）
-source venv/bin/activate && python strategies/multi_factor/tomorrow_picks.py
+# LightGBM 明日预测（前置条件：data/lgb_model.pkl 已存在）
+# 全新环境需先训练：python daily_stock_picks.py（会自动训练并保存模型）
+python strategies/multi_factor/tomorrow_picks.py
 ```
+
+> 扫描器脚本输出报告文本到 stdout；定时任务由 agent 抓取结果推送（Kimi 聊天 + 邮件），手动运行时脚本本身不发邮件。
+> 依赖：扫描器仅需 akshare + pandas + requests（见 requirements.txt），明日预测额外需要 lightgbm + scikit-learn + joblib。
 
 ### 任务管理
 

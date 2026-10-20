@@ -1,0 +1,15 @@
+# NL2SQL RAG 演示（demo.py）的依赖，与量化策略无关，可选安装
+# 注意：sentence-transformers 会安装 torch，体积较大（GB级）
+
+# 向量数据库
+chromadb>=0.4.0
+
+# Embedding 模型
+sentence-transformers>=2.2.0
+
+# SQL 解析和格式化
+sqlparse>=0.4.4
+
+# 工具库
+pydantic>=2.0.0
+python-dotenv>=1.0.0
