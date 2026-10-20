@@ -158,13 +158,12 @@ def fetch_a_stock_list(max_retries=3, base_delay=1.0):
             return stocks
         except Exception as e:
             err_msg = str(e)
+            delay = base_delay * (2 ** attempt)
             if 'rate limit' in err_msg.lower() or 'try again' in err_msg.lower():
-                delay = base_delay * (2 ** attempt)
                 print(f"  A股列表获取被限流 (attempt {attempt+1}/{max_retries})，{delay:.1f}s 后重试...")
-                time.sleep(delay)
             else:
-                print(f"获取A股列表失败: {e}")
-                break
+                print(f"  A股列表获取失败 (attempt {attempt+1}/{max_retries}): {e}，{delay:.1f}s 后重试...")
+            time.sleep(delay)
     print("获取A股列表最终失败")
     return []
 
