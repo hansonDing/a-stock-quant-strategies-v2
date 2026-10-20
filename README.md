@@ -1,184 +1,197 @@
-# NL2SQL RAG 项目
+# A股股票分析选股系统
 
-自然语言生成 SQL 的 RAG 系统，通过向量检索表描述信息，再经过多 Agent 协作生成精准 SQL。
+一套基于Python的A股多因子技术分析选股工具，整合技术指标、动量分析、突破检测和资金流向等多维度数据。
 
-## 系统架构
+**已更新：排除科创板(688)和创业板(300)股票**
 
-```
-用户提问 → 向量检索表描述 → 获取完整表信息 → Agent 1 提取字段 → Agent 2 生成 SQL
-```
+## 📁 文件说明
 
-### 核心组件
+| 文件 | 功能 | 说明 |
+|------|------|------|
+| `stock_analyzer.py` | 多因子技术选股 | MACD、RSI、KDJ、布林带等 |
+| `stock_momentum.py` | 动量选股 + 热点板块 | 突破检测 + 资金流向 |
+| `stock_dashboard.py` | 综合分析仪表盘 | 技术面+动量+资金面综合评分 |
+| `stock_backtest_demo.py` | 回测验证（演示版） | 使用模拟数据验证策略有效性 |
+| `install.sh` | 一键安装脚本 | 自动安装依赖 |
 
-1. **向量存储层**: 表描述信息向量化存储，用于语义检索
-2. **文本存储层**: 表字段信息和使用说明以文本形式存储
-3. **Agent 1 - 字段提取专家**: 从大量字段信息中提取相关字段
-4. **Agent 2 - SQL 生成专家**: 根据提取的字段生成 SQL
+## 🚀 快速开始
 
-## 快速开始
-
-### 安装依赖
-
-```bash
-pip install -r requirements.txt
-```
-
-### 运行演示
+### 1. 安装依赖
 
 ```bash
-# 自动演示模式
-python demo.py
-
-# 交互式模式
-python demo.py --interactive
+bash install.sh
 ```
 
-### 基础使用
+或手动安装：
+```bash
+pip install akshare pandas numpy requests
+```
 
+### 2. 运行分析
+
+```bash
+# 技术分析选股（推荐入门使用）
+python3 stock_analyzer.py
+
+# 动量+突破选股
+python3 stock_momentum.py
+
+# 综合分析（最全面）
+python3 stock_dashboard.py
+
+# 回测验证（演示版）
+python3 stock_backtest_demo.py
+```
+
+## 📊 分析维度
+
+### 技术指标 (stock_analyzer.py)
+- **趋势分析**: 均线多头排列检测 (MA5/10/20/60)
+- **MACD**: 金叉/死叉、柱状图趋势
+- **RSI**: 相对强弱指数，识别超买超卖
+- **KDJ**: 随机指标，捕捉短期拐点
+- **布林带**: 价格位置分析
+- **成交量**: 量比分析，识别放量突破
+
+### 动量分析 (stock_momentum.py)
+- **价格动量**: 5日/10日/20日涨幅
+- **相对强度**: 相对于20日均线的位置
+- **热点板块**: 追踪资金流入最多的行业
+- **突破检测**: 20日/60日新高突破
+
+### 综合分析 (stock_dashboard.py)
+- **技术面得分** (40%): 均线系统 + MACD + RSI + 布林带
+- **动量得分** (40%): 短期涨幅 + 相对强度 + 成交量
+- **资金面得分** (20%): 主力资金净流入 + 散户流向
+
+## 🎯 评分标准
+
+### 综合得分计算
+```
+总分 = 技术面得分 × 0.4 + 动量得分 × 0.4 + 资金面得分 × 0.2
+```
+
+### 各维度满分
+- **趋势分**: 25分 - 均线多头排列程度
+- **MACD分**: 20分 - MACD金叉及柱状图趋势
+- **RSI分**: 15分 - RSI在健康区间(40-60)
+- **布林带分**: 15分 - 价格在布林带中上部
+- **KDJ分**: 15分 - KDJ金叉及多头排列
+- **成交量分**: 10分 - 温和放量(量比1.2-3)
+
+### 推荐等级
+- **90分以上**: 强烈推荐 ⭐⭐⭐⭐⭐
+- **80-89分**: 推荐关注 ⭐⭐⭐⭐
+- **70-79分**: 值得关注 ⭐⭐⭐
+- **60-69分**: 观察标的 ⭐⭐
+- **60分以下**: 暂不关注 ⭐
+
+## 🔒 股票过滤规则
+
+程序已自动排除以下股票：
+- ❌ 科创板股票（代码以688开头）
+- ❌ 创业板股票（代码以300开头）
+- ❌ ST股票（名称包含"ST"）
+- ❌ 退市股票（名称包含"退"）
+
+## 📈 输出示例
+
+```
+🎯 A股综合分析推荐榜
+================================================================================
+排名 代码     名称     最新价   涨跌幅   技术分   动量分   资金分   综合分   主力净流入   推荐理由
+--------------------------------------------------------------------------------
+1    600036   招商银行 35.20   +2.35%  85.0    78.0    72.0    79.4    1.25亿      技术面强势、动量强劲
+2    600519   贵州茅台 1680.00 +1.20%  82.0    75.0    68.0    76.2    8500万      技术面强势
+...
+```
+
+## 🔄 回测验证
+
+系统包含回测模块，可以验证选股策略的历史表现：
+
+```bash
+python3 stock_backtest_demo.py
+```
+
+### 回测指标
+- **胜率**: 盈利交易次数 / 总交易次数
+- **平均收益率**: 所有交易的平均收益
+- **盈亏比**: 平均盈利 / 平均亏损
+- **最大回撤**: 最大亏损幅度
+- **夏普比率**: 风险调整后收益
+
+### 策略评级
+- **A级**: 胜率≥60% 且 平均收益>2% - 推荐
+- **B级**: 胜率≥50% 且 平均收益>0% - 可用
+- **C级**: 胜率≥40% - 谨慎
+- **D级**: 胜率<40% - 不建议
+
+## 🔧 自定义配置
+
+### 修改筛选条件
+
+在 `stock_analyzer.py` 中调整参数：
 ```python
-from src import NL2SQLRAG, TableInfo, ColumnInfo
+# 修改最低得分阈值
+results = screener.screen_stocks(top_n=20, min_score=60)
 
-# 初始化系统
-nl2sql = NL2SQLRAG()
-
-# 添加表信息
-table = TableInfo(
-    name="users",
-    description="用户表",
-    columns=[
-        ColumnInfo(name="id", data_type="INT", comment="主键", is_primary_key=True),
-        ColumnInfo(name="name", data_type="VARCHAR(50)", comment="用户名"),
-    ]
-)
-nl2sql.add_table(table)
-
-# 执行查询
-result = nl2sql.query("查询所有用户")
-print(result['sql'])
+# 调整技术指标权重
+scores['trend'] = 25  # 趋势分权重
 ```
 
-## 项目结构
+### 修改股票过滤规则
 
-```
-.
-├── src/                    # 源代码
-│   ├── __init__.py        # 包入口
-│   ├── config.py          # 配置管理
-│   ├── models.py          # 数据模型
-│   ├── vector_store.py    # 向量数据库存储
-│   ├── table_store.py     # 表信息文本存储
-│   ├── agent_extractor.py # Agent 1: 字段提取
-│   ├── agent_generator.py # Agent 2: SQL 生成
-│   └── nl2sql.py          # 主入口
-├── docs/                   # 文档
-│   ├── requirements.md     # 需求分析
-│   ├── architecture.md     # 架构设计
-│   └── system_flow.mmd     # 流程图
-├── data/                   # 数据存储（自动创建）
-│   ├── vector_db/          # 向量数据库
-│   └── table_info.json     # 表信息存储
-├── demo.py                 # 演示脚本
-├── requirements.txt        # 依赖列表
-└── README.md              # 本文件
-```
-
-## 配置说明
-
-### 向量数据库配置
-
+如需调整过滤条件，编辑以下代码：
 ```python
-from src import NL2SQLConfig, VectorDBConfig
-
-config = NL2SQLConfig(
-    vector_db=VectorDBConfig(
-        embedding_model="BAAI/bge-large-zh-v1.5",  # Embedding 模型
-        top_k=5,  # 检索返回的表数量
-        similarity_threshold=0.5  # 相似度阈值
-    )
-)
-
-nl2sql = NL2SQLRAG(config)
+# 跳过ST股票、退市股票、科创板(688)、创业板(300)
+if 'ST' in name or '退' in name or symbol.startswith('688') or symbol.startswith('300'):
+    continue
 ```
 
-### SQL 方言配置
+### 添加自定义指标
 
+在 `TechnicalIndicators` 类中添加新方法：
 ```python
-from src import NL2SQLConfig
-
-config = NL2SQLConfig()
-config.agent2_dialect = "postgresql"  # 支持 mysql, postgresql, sqlite, oracle, sqlserver
-
-nl2sql = NL2SQLRAG(config)
+@staticmethod
+def custom_indicator(df: pd.DataFrame) -> pd.Series:
+    # 你的指标计算逻辑
+    return indicator_values
 ```
 
-## 核心概念
+## 📚 依赖库
 
-### 为什么表描述向量化，字段信息不向量化？
+- **akshare**: A股数据获取（免费开源）
+- **pandas**: 数据处理
+- **numpy**: 数值计算
+- **requests**: HTTP请求
 
-1. **精度问题**: 字段级别的语义检索容易丢失上下文
-2. **完整性问题**: 用户问题可能涉及多个字段的组合关系
-3. **可控性**: 通过 Agent 提取比纯向量匹配更可靠
-4. **成本**: 减少向量存储和检索的复杂度
+## 📝 更新日志
 
-### 为什么使用两个 Agent？
+### v1.1.0 (2024-02)
+- 新增排除科创板(688)和创业板(300)功能
+- 新增回测验证模块
+- 优化评分算法权重
 
-1. **关注点分离**: 提取和生成是不同的认知任务
-2. **上下文压缩**: Agent 1 将大量信息压缩为精简上下文
-3. **可调试性**: 可以分别优化每个 Agent 的 prompt
-4. **可扩展性**: 未来可插入更多 Agent（如 SQL 优化器）
+### v1.0.0 (2024-02)
+- 基础技术分析选股
+- 动量选股系统
+- 综合分析仪表盘
+- 资金流向分析
 
-## API 文档
+## 🤝 免责声明
 
-### NL2SQLRAG 类
+本程序仅用于学习和研究目的。作者不对因使用本程序而产生的任何投资损失负责。
 
-#### 初始化
+**重要提示：**
+1. 本程序基于历史数据和技术指标分析，不构成投资建议
+2. 股市有风险，投资需谨慎
+3. 技术分析不能保证未来收益
+4. 建议结合基本面分析和市场环境综合判断
+5. 设置严格的止损纪律，控制仓位风险
 
-```python
-nl2sql = NL2SQLRAG(config=None)
-```
+## 🔗 相关资源
 
-#### 添加表
-
-```python
-nl2sql.add_table(table_info: TableInfo) -> str
-nl2sql.add_tables(table_infos: List[TableInfo]) -> List[str]
-```
-
-#### 执行查询
-
-```python
-result = nl2sql.query(user_question: str, top_k: int = None)
-# 返回: {
-#     "success": bool,
-#     "sql": str,
-#     "explanation": str,
-#     "confidence": float,
-#     "retrieved_tables": List[Dict],
-#     "extracted_fields": List[Dict],
-#     "involved_tables": List[str]
-# }
-```
-
-#### 其他方法
-
-```python
-nl2sql.get_table_info(table_name: str) -> Optional[TableInfo]
-nl2sql.list_tables() -> List[str]
-nl2sql.delete_table(table_name: str) -> bool
-nl2sql.get_stats() -> Dict[str, Any]
-```
-
-## 开发计划
-
-- [x] 需求分析
-- [x] 系统架构设计
-- [x] 核心功能实现
-- [ ] 集成真实 LLM API
-- [ ] SQL 执行和结果验证
-- [ ] 用户反馈收集
-- [ ] Web API 接口
-- [ ] 前端界面
-
-## 许可证
-
-MIT
+- [akshare文档](https://www.akshare.xyz/)
+- [TA-Lib技术指标](https://mrjbq7.github.io/ta-lib/)
+- [量化交易入门](https://www.zhihu.com/column/quant)
