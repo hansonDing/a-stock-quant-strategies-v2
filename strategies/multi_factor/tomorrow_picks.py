@@ -93,6 +93,10 @@ def predict() -> pd.DataFrame:
             logger.warning(f"[{code}] 因子失败: {e}")
 
     features_df = pd.DataFrame(all_factors)
+    # 确保所有模型需要的因子列都存在（基本面因子可能缺失，用0填充）
+    for col in FACTOR_COLS:
+        if col not in features_df.columns:
+            features_df[col] = 0.0
     X_pred = features_df[FACTOR_COLS].fillna(0)
     features_df['pred_return'] = model.predict(X_pred)
     return features_df.sort_values('pred_return', ascending=False)
