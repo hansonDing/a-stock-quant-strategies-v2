@@ -32,3 +32,15 @@ Thumbs.db
 # 日志
 logs/
 *.log
+
+# OpenClaw 工作区文件（不入库）
+AGENTS.md
+SOUL.md
+USER.md
+BOOTSTRAP.md
+IDENTITY.md
+TOOLS.md
+HEARTBEAT.md
+MEMORY.md
+memory/
+diary/
