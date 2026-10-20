@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-A股强势扫描器
+A股强势扫描器（修改版：剔除创业板和科创板）
 - 扫描全市场，找出涨幅≥3%的股票
+- 剔除创业板(300/301开头)和科创板(688开头)
 - 检查所属行业板块是否也上涨
 - 价值因子分析（PE/PB/市值）
 - 筹码集中度代理分析（量比/换手率/振幅）
@@ -42,7 +43,7 @@ def save_json(path, data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 def fetch_stock_list_via_akshare():
-    """通过akshare获取全市场股票列表（含行业分类）"""
+    """通过akshare获取全市场股票列表（含行业分类），剔除创业板(300/301)和科创板(688)"""
     try:
         import akshare as ak
         df = ak.stock_info_a_code_name()
@@ -50,6 +51,9 @@ def fetch_stock_list_via_akshare():
         for _, row in df.iterrows():
             code = str(row['code']).zfill(6)
             name = row['name']
+            # 剔除创业板(300/301开头)和科创板(688开头)
+            if code.startswith('300') or code.startswith('301') or code.startswith('688'):
+                continue
             if code.startswith('6') or code.startswith('68'):
                 market = 'sh'
             elif code.startswith('0') or code.startswith('3'):
@@ -63,7 +67,7 @@ def fetch_stock_list_via_akshare():
         return None
 
 def fetch_stock_list_via_szse():
-    """通过深交所API获取股票列表"""
+    """通过深交所API获取股票列表，剔除创业板(300/301开头)"""
     stocks = []
     try:
         page = 1
@@ -85,6 +89,9 @@ def fetch_stock_list_via_szse():
                 name_match = re.search(r'>([^<]+)<', name_html)
                 name = name_match.group(1) if name_match else ''
                 industry = item.get('sshymc', '')
+                # 剔除创业板(300/301开头)
+                if code.startswith('300') or code.startswith('301'):
+                    continue
                 if code and name:
                     stocks.append({'code': code, 'name': name, 'market': 'sz', 'industry': industry})
             metadata = data[0].get('metadata', {})
@@ -100,9 +107,9 @@ def fetch_stock_list_via_szse():
     return stocks
 
 def get_stock_list():
-    """获取全市场股票列表，含行业分类"""
-    cached = cached_json(STOCK_LIST_CACHE, ttl_seconds=86400)
-    if cached and len(cached) > 5000:
+    """获取全市场股票列表，含行业分类，已剔除创业板(300/301)和科创板(688)"""
+    cached = cached_json(STOCK_LIST_CACHE, ttl_seconds=604800)
+    if cached and len(cached) > 2000:
         print("  使用缓存股票列表")
         return cached
     
@@ -405,11 +412,12 @@ def calculate_strength_score(stock):
 # ============ 主流程 ============
 
 def run_analysis(change_pct_threshold=3.0, max_change_pct=8.0):
-    """执行全部分析流程 - 基于前一天收盘数据"""
+    """执行全部分析流程 - 基于前一天收盘数据，已剔除创业板(300/301)和科创板(688)"""
     print(f"\n{'='*60}")
     print(f"A股强势扫描器 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"分析日期: 前一交易日收盘数据")
     print(f"筛选条件: 涨幅 ≥ {change_pct_threshold}% 且 < {max_change_pct}%, 成交量 ≥ 前3天平均的2倍")
+    print(f"已剔除: 创业板(300/301开头)和科创板(688开头)")
     print(f"{'='*60}\n")
     
     # 1. 获取股票列表
@@ -521,18 +529,22 @@ def run_analysis(change_pct_threshold=3.0, max_change_pct=8.0):
     top_industries = sorted(industry_avg.items(), key=lambda x: x[1], reverse=True)[:5]
     print(f"  领涨行业: " + ", ".join([f"{n}(+{v:.2f}%)" for n, v in top_industries]))
     
-    # 4. 初步筛选：涨幅 ≥ 阈值 且 < 上限 且非ST
+    # 4. 初步筛选：涨幅 ≥ 阈值 且 < 上限 且非ST，且剔除创业板/科创板
     print(f"[4/5] 初步筛选: 涨幅 ≥ {change_pct_threshold}% 且 < {max_change_pct}% ...")
     candidates = []
     for stock in all_quotes:
+        code = stock.get('code', '')
         name = stock.get('name', '')
         # 过滤ST/退市/涨停
         if 'ST' in name or '退' in name or 'N' in name[:1]:
             continue
+        # 剔除创业板(300/301开头)和科创板(688开头)
+        if code.startswith('300') or code.startswith('301') or code.startswith('688'):
+            continue
         pct = stock.get('change_pct', 0)
         if pct >= change_pct_threshold and pct < max_change_pct:
             candidates.append(stock)
-    
+
     print(f"  初步候选: {len(candidates)} 只")
     
     # 5. 成交量验证：前一天成交量 >= 前3天平均的2倍
@@ -602,6 +614,7 @@ def generate_report(stocks, industry_avg, change_pct_threshold=3.0, max_change_p
     
     lines.append(f"【精选股票】共 {len(stocks)} 只")
     lines.append(f"筛选条件: 涨幅≥{change_pct_threshold}%且<{max_change_pct}% + 成交量≥前3天平均2倍 + 所属行业上涨")
+    lines.append(f"已剔除: 创业板(300/301开头)和科创板(688开头)")
     lines.append("-" * 90)
     lines.append(f"{'排名':<4} {'代码':<8} {'名称':<10} {'现价':<8} {'涨幅':<8} {'量比(3d)':<10} {'行业':<10} {'行业涨':<8} {'价值分':<6} {'筹码分':<6} {'综合分':<6}")
     lines.append("-" * 90)
