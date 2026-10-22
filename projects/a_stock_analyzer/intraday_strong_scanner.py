@@ -278,3 +278,24 @@ if __name__ == '__main__':
         rp = f"/tmp/intraday_strong_{datetime.now().strftime('%Y%m%d_%H%M')}.txt"
         Path(rp).write_text(report, encoding='utf-8')
         print(f"\n报告已保存: {rp}")
+
+        # 发送邮件通知（使用 imap-smtp-email skill，仅 hansonnan.ding@sc.com）
+        try:
+            import subprocess
+            skill_dir = '/root/.openclaw/workspace/skills/imap-smtp-email-chinese'
+            result = subprocess.run(
+                [
+                    'node', f'{skill_dir}/scripts/smtp.js', 'send',
+                    '--to', 'hansonnan.ding@sc.com',
+                    '--subject', f'A股盘中强势扫描 - {datetime.now().strftime("%Y-%m-%d %H:%M")}',
+                    '--body', report,
+                    '--attach', rp
+                ],
+                capture_output=True, text=True, timeout=60
+            )
+            if result.returncode == 0:
+                print("邮件通知已发送 (hansonnan.ding@sc.com)")
+            else:
+                print(f"邮件发送失败: {result.stderr[:200]}")
+        except Exception as e:
+            print(f"邮件发送失败: {e}")
